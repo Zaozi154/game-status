@@ -1,30 +1,35 @@
 import os, json, requests
-from bs4 import BeautifulSoup
 
 url = os.environ['DOC_URL']
 
 headers = {'User-Agent': 'Mozilla/5.0'}
 resp = requests.get(url, headers=headers, timeout=30)
+
+# ===== 输出响应状态和内容前 2500 字符 =====
+print("=== 状态码:", resp.status_code)
+print("=== 响应头 Content-Type:", resp.headers.get('Content-Type', ''))
+print("=== 页面文本前 2500 字符 ===")
+print(resp.text[:2500])
+# ===== 诊断结束 =====
+
+# 如果状态码不是200，直接退出
+if resp.status_code != 200:
+    print("\n❌ 请求失败，请检查 DOC_URL 是否有效，或是否需要登录。")
+    exit(1)
+
+# 尝试解析
+from bs4 import BeautifulSoup
 soup = BeautifulSoup(resp.text, 'lxml')
-
-# ===== 调试输出 =====
-print("=== 页面标题:", soup.title.string if soup.title else "无标题")
-print("=== 页面中所有的 table 数量:", len(soup.find_all('table')))
-
-# 输出前3个 table 的预览内容
-for idx, table in enumerate(soup.find_all('table')):
-    if idx >= 3:
-        break
-    rows = table.find_all('tr')
-    print(f"\n--- 表格 {idx+1} (行数: {len(rows)}) ---")
-    for i, row in enumerate(rows[:4]):  # 只输出前4行
-        cells = row.find_all(['th','td'])
-        text = [cell.get_text(strip=True) for cell in cells]
-        print(f"  行{i}: {text}")
-# ===== 调试结束 =====
-
-# 开始解析所有表格
 tables = soup.find_all('table')
+print(f"\n=== 找到的 table 数量: {len(tables)}")
+if len(tables) == 0:
+    print("⚠️ 没有找到任何表格，页面可能是动态加载的。")
+    # 可以再检查是否有 iframe
+    iframes = soup.find_all('iframe')
+    print(f"页面中 iframe 数量: {len(iframes)}")
+    for iframe in iframes:
+        print("  iframe src:", iframe.get('src'))
+    exit(1)
 
 def parse_table(table):
     rows = table.find_all('tr')
@@ -45,7 +50,6 @@ def parse_table(table):
             data.append(row_data)
     return data
 
-# 你的 Sheet 顺序（请确认与文档底部标签顺序一致）
 all_sheets = ['角色','技能','角色技能','伙伴','伙伴技能','角色伙伴','物品','装备配置']
 sheets = {}
 sheet_idx = 0
@@ -57,7 +61,6 @@ for t in tables:
     sheets[all_sheets[sheet_idx]] = parse_table(t)
     sheet_idx += 1
 
-# 保存
 with open('data.json', 'w', encoding='utf-8') as f:
     json.dump(sheets, f, ensure_ascii=False, indent=2)
 
