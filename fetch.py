@@ -1,16 +1,30 @@
-import os, json, requests, re
+import os, json, requests
 from bs4 import BeautifulSoup
 
 url = os.environ['DOC_URL']
 
-# 下载腾讯文档发布网页
 headers = {'User-Agent': 'Mozilla/5.0'}
-resp = requests.get(url, headers=headers)
+resp = requests.get(url, headers=headers, timeout=30)
 soup = BeautifulSoup(resp.text, 'lxml')
 
-# 腾讯文档发布页中，每个工作表是一个独立的 table，通过标签判断
-# 通常结构：div.sheet-container > table
-tables = soup.select('table')
+# ===== 调试输出 =====
+print("=== 页面标题:", soup.title.string if soup.title else "无标题")
+print("=== 页面中所有的 table 数量:", len(soup.find_all('table')))
+
+# 输出前3个 table 的预览内容
+for idx, table in enumerate(soup.find_all('table')):
+    if idx >= 3:
+        break
+    rows = table.find_all('tr')
+    print(f"\n--- 表格 {idx+1} (行数: {len(rows)}) ---")
+    for i, row in enumerate(rows[:4]):  # 只输出前4行
+        cells = row.find_all(['th','td'])
+        text = [cell.get_text(strip=True) for cell in cells]
+        print(f"  行{i}: {text}")
+# ===== 调试结束 =====
+
+# 开始解析所有表格
+tables = soup.find_all('table')
 
 def parse_table(table):
     rows = table.find_all('tr')
@@ -22,7 +36,6 @@ def parse_table(table):
         cells = row.find_all(['th','td'])
         row_data = {}
         for i, cell in enumerate(cells):
-            # 如果有图片，取 src
             img = cell.find('img')
             if img and img.get('src'):
                 row_data[headers[i] if i < len(headers) else i] = img['src']
@@ -32,21 +45,22 @@ def parse_table(table):
             data.append(row_data)
     return data
 
-sheets = {}
-# 根据标题找到不同 sheet 的 table（腾讯文档可能有多个 table，通常按顺序）
-# 这里假设顺序与你的 sheet 顺序一致，但为了鲁棒，我们通过表头识别
+# 你的 Sheet 顺序（请确认与文档底部标签顺序一致）
 all_sheets = ['角色','技能','角色技能','伙伴','伙伴技能','角色伙伴','物品','装备配置']
+sheets = {}
 sheet_idx = 0
 for t in tables:
     if sheet_idx >= len(all_sheets):
         break
-    # 跳过空表或太小的表
     if len(t.find_all('tr')) < 2:
         continue
     sheets[all_sheets[sheet_idx]] = parse_table(t)
     sheet_idx += 1
 
-# 保存为 data.json
+# 保存
 with open('data.json', 'w', encoding='utf-8') as f:
     json.dump(sheets, f, ensure_ascii=False, indent=2)
-print("数据已更新")
+
+print("\n=== 解析完成，各 Sheet 数据量 ===")
+for name, data in sheets.items():
+    print(f"  {name}: {len(data)} 条")
