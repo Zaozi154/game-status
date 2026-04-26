@@ -1,0 +1,34 @@
+名称: 抓取腾讯文档数据
+
+启用:
+计划:
+    - cron: '*/10 * * * *'   # 每10分钟自动抓一次
+ 工作流调度:         # 允许手动触发
+
+作业:
+抓取:
+: ubuntu-latest
+步骤:
+      - 名称: 检出代码
+使用: actions/checkout@v3
+
+      - 名称: 安装 Python
+使用: actions/setup-python@v4
+与:
+python版本: '3.9'
+
+      - 名称: 安装依赖
+运行: pip install requests beautifulsoup4 lxml
+
+      - 名称: 运行抓取脚本
+环境:
+          DOC_URL: ${{ secrets.DOC_URL }}
+运行: python fetch.py
+
+      - name: 提交数据文件
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'actions@github.com'
+          git add data.json
+          git commit -m '自动更新数据' || echo "没有变化"
+git 推送
