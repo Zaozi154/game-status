@@ -1,3 +1,6 @@
+permissions:
+  contents: write
+  
 name: 抓取腾讯文档数据
 
 on:
