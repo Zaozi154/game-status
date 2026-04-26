@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>角色状态面板</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<style>
+  body { font-family: "Microsoft YaHei", sans-serif; background: #1a1a2e; color: #eee; margin: 0; padding: 20px; }
+  .container { max-width: 1000px; margin: 0 auto; }
+  .role-card { background: #16213e; border-radius: 12px; padding: 20px; margin: 15px; cursor: pointer; display: inline-block; text-align: center; transition: 0.2s; }
+  .role-card:hover { background: #0f3460; }
+  .role-card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e94560; }
+  .tabs { display: flex; gap: 10px; margin: 20px 0; }
+  .tab { padding: 10px 20px; background: #16213e; border-radius: 8px; cursor: pointer; }
+  .tab.active { background: #e94560; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #16213e; border-radius: 8px; overflow: hidden; }
+  th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #2a2a4a; }
+  th { background: #0f3460; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin: 2px; }
+  .weak { background: #c0392b; }
+  .resist { background: #2980b9; }
+  .immune { background: #7d3c98; }
+  .absorb { background: #27ae60; }
+  .normal { background: #555; }
+  .equip-slot { background: #2d2d4a; padding: 10px; border-radius: 8px; margin: 5px 0; display: flex; align-items: center; gap: 10px; }
+  .equip-slot img { width: 40px; height: 40px; border-radius: 5px; }
+  button { background: #e94560; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+  .back-btn { margin-bottom: 15px; display: inline-block; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="container">
+    <!-- 角色选择页 -->
+    <div v-if="!selectedRole">
+      <h1>选择角色</h1>
+      <div>
+        <div v-for="role in roles" :key="role['角色ID']" class="role-card" @click="selectRole(role)">
+          <img :src="role['头像(图片)'] || 'https://via.placeholder.com/80'" alt="头像">
+          <h3>{{ role['角色名称'] }}</h3>
+          <p>等级 {{ role['等级'] }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 角色详情 -->
+    <div v-else>
+      <button @click="selectedRole=null" class="back-btn">← 返回角色选择</button>
+      <h1>{{ selectedRole['角色名称'] }} <small>Lv.{{ selectedRole['等级'] }}</small></h1>
+      <img :src="selectedRole['头像(图片)']" width="80" style="border-radius:50%">
+
+      <div class="tabs">
+        <div :class="['tab', activeTab==='attr'?'active':'']" @click="activeTab='attr'">属性</div>
+        <div :class="['tab', activeTab==='skill'?'active':'']" @click="activeTab='skill'">技能</div>
+        <div :class="['tab', activeTab==='partner'?'active':'']" @click="activeTab='partner'">伙伴</div>
+        <div :class="['tab', activeTab==='bag'?'active':'']" @click="activeTab='bag'">背包</div>
+      </div>
+
+      <!-- 属性面板 -->
+      <div v-if="activeTab==='attr'">
+        <table>
+          <tr><th>HP</th><td>{{ selectedRole['HP'] }}</td><th>MP</th><td>{{ selectedRole['MP'] }}</td></tr>
+          <tr><th>物防</th><td>{{ selectedRole['物防'] }}</td><th>魔防</th><td>{{ selectedRole['魔防'] }}</td></tr>
+          <tr><th>先攻值</th><td colspan="3">{{ selectedRole['先攻值'] }}</td></tr>
+          <tr><th>技能加点详情</th><td colspan="3">{{ selectedRole['技能加点详情'] }}</td></tr>
+        </table>
+        <h3>属性抗性</h3>
+        <div>
+          <span v-for="attr in ['火','雷','冰','风','地','毒','光','暗']" :key="attr"
+                :class="['badge', resistanceClass(selectedRole['抗性-'+attr])]">
+            {{ attr }}: {{ selectedRole['抗性-'+attr] || '普通' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- 技能面板 -->
+      <div v-if="activeTab==='skill'">
+        <table>
+          <tr><th>技能ID</th><th>名称</th><th>来源</th><th>类型</th><th>消耗</th><th>效果</th></tr>
+          <tr v-for="sk in roleSkills" :key="sk['技能ID']">
+            <td>{{ sk['技能ID'] }}</td>
+            <td>{{ sk['技能名称'] }}</td>
+            <td>{{ sk['来源'] }}</td>
+            <td>{{ sk['类型'] }}</td>
+            <td>{{ sk['消耗'] }}</td>
+            <td>{{ sk['效果'] }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- 伙伴面板 -->
+      <div v-if="activeTab==='partner'">
+        <div v-for="partner in rolePartners" :key="partner['伙伴ID']" style="background:#16213e;padding:15px;margin:10px 0;border-radius:8px">
+          <h3>{{ partner['伙伴名称'] }} <small>Lv.{{ partner['等级'] }}</small></h3>
+          <p>HP: {{ partner['HP'] }} | MP: {{ partner['MP'] }} | 物防: {{ partner['物防'] }} | 魔防: {{ partner['魔防'] }}</p>
+          <div>抗性: 
+            <span v-for="attr in ['火','雷','冰','风','地','毒','光','暗']" :key="attr"
+                  :class="['badge', resistanceClass(partner['抗性-'+attr])]">
+              {{ attr }}: {{ partner['抗性-'+attr] || '普通' }}
+            </span>
+          </div>
+          <h4>伙伴技能</h4>
+          <table>
+            <tr><th>技能ID</th><th>名称</th><th>消耗</th><th>效果</th></tr>
+            <tr v-for="ps in getPartnerSkills(partner['伙伴ID'])" :key="ps['技能ID']">
+              <td>{{ ps['技能ID'] }}</td>
+              <td>{{ ps['技能名称'] }}</td>
+              <td>{{ ps['消耗'] }}</td>
+              <td>{{ ps['效果'] }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- 背包面板 + 装备展示 -->
+      <div v-if="activeTab==='bag'">
+        <h3>当前装备</h3>
+        <div>
+          <div class="equip-slot" v-for="slot in ['武器','防具','饰品1','饰品2']" :key="slot">
+            <strong>{{ slot }}:</strong>
+            <template v-if="equipments[slot]">
+              <img :src="equipments[slot]['图标(图片)']" width="30"> {{ equipments[slot]['物品名称'] }}
+            </template>
+            <span v-else>无</span>
+          </div>
+        </div>
+        <h3>背包物品</h3>
+        <table>
+          <tr><th>图标</th><th>ID</th><th>名称</th><th>类型</th><th>标签</th><th>数量</th><th>描述</th><th>效果</th><th>状态</th></tr>
+          <tr v-for="item in allItems" :key="item['物品ID']">
+            <td><img :src="item['图标(图片)']" width="30" height="30"></td>
+            <td>{{ item['物品ID'] }}</td>
+            <td>{{ item['物品名称'] }}</td>
+            <td>{{ item['物品类型'] }}</td>
+            <td>{{ item['标签'] }}</td>
+            <td>{{ item['数量'] }}</td>
+            <td>{{ item['描述'] }}</td>
+            <td>{{ item['效果'] }}</td>
+            <td><span v-if="isEquipped(item['物品ID'])">已装备</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp } = Vue;
+createApp({
+  data() {
+    return {
+      rawData: null,
+      selectedRole: null,
+      activeTab: 'attr'
+    }
+  },
+  computed: {
+    roles() {
+      return this.rawData?.['角色'] || [];
+    },
+    allItems() {
+      return this.rawData?.['物品'] || [];
+    },
+    roleSkills() {
+      if (!this.selectedRole || !this.rawData) return [];
+      const roleId = this.selectedRole['角色ID'];
+      const links = this.rawData['角色技能']?.filter(r => r['角色ID'] === roleId) || [];
+      const skillIds = links.map(l => l['技能ID']);
+      return this.rawData['技能']?.filter(s => skillIds.includes(s['技能ID'])) || [];
+    },
+    rolePartners() {
+      if (!this.selectedRole || !this.rawData) return [];
+      const roleId = this.selectedRole['角色ID'];
+      const links = this.rawData['角色伙伴']?.filter(r => r['角色ID'] === roleId) || [];
+      const partnerIds = links.map(l => l['伙伴ID']);
+      return this.rawData['伙伴']?.filter(p => partnerIds.includes(p['伙伴ID'])) || [];
+    },
+    equipments() {
+      if (!this.selectedRole || !this.rawData) return {};
+      const roleId = this.selectedRole['角色ID'];
+      const configs = this.rawData['装备配置']?.filter(e => e['角色ID'] === roleId) || [];
+      const eq = {};
+      configs.forEach(c => {
+        const item = this.allItems.find(i => i['物品ID'] === c['物品ID']);
+        if (item) eq[c['槽位']] = item;
+      });
+      return eq;
+    }
+  },
+  methods: {
+    async fetchData() {
+      try {
+        const res = await fetch('data.json');
+        this.rawData = await res.json();
+      } catch (e) {
+        console.error('获取数据失败，请检查 data.json');
+      }
+    },
+    selectRole(role) {
+      this.selectedRole = role;
+      this.activeTab = 'attr';
+    },
+    resistanceClass(val) {
+      if (!val) return 'normal';
+      if (val.includes('弱点')) return 'weak';
+      if (val.includes('抗性')) return 'resist';
+      if (val.includes('免疫')) return 'immune';
+      if (val.includes('吸收')) return 'absorb';
+      return 'normal';
+    },
+    getPartnerSkills(partnerId) {
+      if (!this.rawData) return [];
+      const links = this.rawData['伙伴技能']?.filter(p => p['伙伴ID'] === partnerId) || [];
+      const skillIds = links.map(l => l['技能ID']);
+      return this.rawData['技能']?.filter(s => skillIds.includes(s['技能ID'])) || [];
+    },
+    isEquipped(itemId) {
+      return Object.values(this.equipments).some(i => i['物品ID'] === itemId);
+    }
+  },
+  mounted() {
+    this.fetchData();
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
