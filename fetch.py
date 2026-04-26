@@ -1,69 +1,39 @@
-import os, json, requests
+import json
+from openpyxl import load_workbook
 
-url = os.environ['DOC_URL']
+# 读取仓库中的 Excel 文件
+wb = load_workbook('data.xlsx', data_only=True)
 
-headers = {'User-Agent': 'Mozilla/5.0'}
-resp = requests.get(url, headers=headers, timeout=30)
+# Sheet 顺序与之前一致（从左到右）
+all_sheets = ['角色','技能','角色技能','伙伴','伙伴技能','角色伙伴','物品','装备配置']
 
-# ===== 输出响应状态和内容前 2500 字符 =====
-print("=== 状态码:", resp.status_code)
-print("=== 响应头 Content-Type:", resp.headers.get('Content-Type', ''))
-print("=== 页面文本前 2500 字符 ===")
-print(resp.text[:2500])
-# ===== 诊断结束 =====
-
-# 如果状态码不是200，直接退出
-if resp.status_code != 200:
-    print("\n❌ 请求失败，请检查 DOC_URL 是否有效，或是否需要登录。")
-    exit(1)
-
-# 尝试解析
-from bs4 import BeautifulSoup
-soup = BeautifulSoup(resp.text, 'lxml')
-tables = soup.find_all('table')
-print(f"\n=== 找到的 table 数量: {len(tables)}")
-if len(tables) == 0:
-    print("⚠️ 没有找到任何表格，页面可能是动态加载的。")
-    # 可以再检查是否有 iframe
-    iframes = soup.find_all('iframe')
-    print(f"页面中 iframe 数量: {len(iframes)}")
-    for iframe in iframes:
-        print("  iframe src:", iframe.get('src'))
-    exit(1)
-
-def parse_table(table):
-    rows = table.find_all('tr')
-    if not rows:
-        return []
-    headers = [th.get_text(strip=True) for th in rows[0].find_all(['th','td'])]
+sheets = {}
+for name in all_sheets:
+    if name not in wb.sheetnames:
+        print(f"⚠️ 未找到 Sheet：{name}，跳过")
+        continue
+    ws = wb[name]
+    rows = list(ws.iter_rows(values_only=True))
+    if len(rows) < 2:
+        print(f"⚠️ {name} 没有数据行，跳过")
+        continue
+    headers = [str(h).strip() if h else '' for h in rows[0]]
     data = []
     for row in rows[1:]:
-        cells = row.find_all(['th','td'])
-        row_data = {}
-        for i, cell in enumerate(cells):
-            img = cell.find('img')
-            if img and img.get('src'):
-                row_data[headers[i] if i < len(headers) else i] = img['src']
+        # 跳过完全空行
+        if all(cell is None or str(cell).strip() == '' for cell in row):
+            continue
+        entry = {}
+        for i, cell in enumerate(row):
+            if i < len(headers):
+                entry[headers[i]] = str(cell).strip() if cell is not None else ''
             else:
-                row_data[headers[i] if i < len(headers) else i] = cell.get_text(strip=True)
-        if any(v for v in row_data.values()):
-            data.append(row_data)
-    return data
-
-all_sheets = ['角色','技能','角色技能','伙伴','伙伴技能','角色伙伴','物品','装备配置']
-sheets = {}
-sheet_idx = 0
-for t in tables:
-    if sheet_idx >= len(all_sheets):
-        break
-    if len(t.find_all('tr')) < 2:
-        continue
-    sheets[all_sheets[sheet_idx]] = parse_table(t)
-    sheet_idx += 1
+                entry[f'col{i}'] = str(cell).strip() if cell is not None else ''
+        data.append(entry)
+    sheets[name] = data
+    print(f"  {name}: {len(data)} 条")
 
 with open('data.json', 'w', encoding='utf-8') as f:
     json.dump(sheets, f, ensure_ascii=False, indent=2)
 
-print("\n=== 解析完成，各 Sheet 数据量 ===")
-for name, data in sheets.items():
-    print(f"  {name}: {len(data)} 条")
+print("✅ data.json 已从 data.xlsx 生成")
