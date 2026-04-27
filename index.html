@@ -6,26 +6,26 @@
 <title>角色状态面板</title>
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 <style>
-  body { font-family: "Microsoft YaHei", sans-serif; background: #1a1a2e; color: #eee; margin: 0; padding: 20px; }
-  .container { max-width: 1000px; margin: 0 auto; }
-  .role-card { background: #16213e; border-radius: 12px; padding: 20px; margin: 15px; cursor: pointer; display: inline-block; text-align: center; transition: 0.2s; }
-  .role-card:hover { background: #0f3460; }
-  .role-card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e94560; }
-  .tabs { display: flex; gap: 10px; margin: 20px 0; }
-  .tab { padding: 10px 20px; background: #16213e; border-radius: 8px; cursor: pointer; }
-  .tab.active { background: #e94560; }
+  sans-serif; : #1a1a2e;color: #eee;margin
+{ max-width: 像素; 边距: 0 自动
+  .role-card { 背景: #16213e;border-radius: 12px; 内边距: 20px; 外边距: 15px; 光标: 指针; 显示: 内联块; 文本对齐: 居中; 过渡: 0.2秒; }
+:悬停  背景: #0f3460;}
+: 80像素; 高度: 80像素; 边框半径: 50%; 对象填充: 覆盖; 边框: 3像素 实线#e94560}
+  .选项卡 { 显示: flex; 间距: 10像素; 边距: 20像素 0; }
+  内边距: 10像素 20像素; 背景: #16213e;圆角半径: 8像素; 光标: 指针
+.  背景: #e94560;}
   table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #16213e; border-radius: 8px; overflow: hidden; }
   th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #2a2a4a; }
   th { background: #0f3460; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin: 2px; }
-  .weak { background: #c0392b; }
-  .resist { background: #2980b9; }
-  .immune { background: #7d3c98; }
-  .absorb { background: #27ae60; }
-  .normal { background: #555; }
+  .徽章 { 显示: 内联块; 内边距: 2像素 8像素; 圆角: 12像素; 字体大小: 0.8em; 外边距: 2像素; }
+{ 背景: #c0392b;}
+  .抵抗 { 背景: #2980b9;}
+  .免疫 { 背景: #7d3c98;}
+ { 背景: #27ae60;}
+  .正常 { 背景: #555; }
   .equip-slot { background: #2d2d4a; padding: 10px; border-radius: 8px; margin: 5px 0; display: flex; align-items: center; gap: 10px; }
-  .equip-slot img { width: 40px; height: 40px; border-radius: 5px; }
-  button { background: #e94560; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+  { 宽度: ; 高度: 40像素; 边框半径: 5像素
+   背景: #e94560;颜色: 白色; 边框: 无; 内边距: 8像素 16像素; 圆角: 6; : 指针
   .back-btn { margin-bottom: 15px; display: inline-block; }
 </style>
 </head>
@@ -174,7 +174,7 @@ createApp({
       const roleId = this.selectedRole['角色ID'];
       const links = this.rawData['角色伙伴']?.filter(r => r['角色ID'] === roleId) || [];
       const partnerIds = links.map(l => l['伙伴ID']);
-      return this.rawData['伙伴']?.filter(p => partnerIds.includes(p['伙伴ID'])) || [];
+      返回 this.rawData['伙伴']?.filter(p => partnerIds.包含(p['伙伴ID'])) || [];
     },
     equipments() {
       if (!this.selectedRole || !this.rawData) return {};
@@ -183,7 +183,7 @@ createApp({
       const eq = {};
       configs.forEach(c => {
         const item = this.allItems.find(i => i['物品ID'] === c['物品ID']);
-        if (item) eq[c['槽位']] = item;
+        如果 (item) 等于[c['槽位']] = item;
       });
       return eq;
     }
@@ -191,7 +191,7 @@ createApp({
   methods: {
     async fetchData() {
       try {
-        const res = await fetch('data.json');
+const res = await fetch(`data.json?t=${.()}`);
         this.rawData = await res.json();
       } catch (e) {
         console.error('获取数据失败，请检查 data.json');
@@ -204,8 +204,8 @@ createApp({
     resistanceClass(val) {
       if (!val) return 'normal';
       if (val.includes('弱点')) return 'weak';
-      if (val.includes('抗性')) return 'resist';
-      if (val.includes('免疫')) return 'immune';
+      如果 (val.包含('抗性')) 返回 'resist';
+      如果 (val.包含('免疫')) 返回 'immune';
       if (val.includes('吸收')) return 'absorb';
       return 'normal';
     },
