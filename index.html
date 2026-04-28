@@ -1,41 +1,250 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>角色状态面板</title>
-<script src="https://cdn.staticfile.org/vue/3.4.21/vue.global.prod.min.js"></script>
-<style>
-  body { font-family: "Microsoft YaHei", sans-serif; background: #1a1a2e; color: #eee; margin: 0; padding: 20px; }
-  .container { max-width: 1000px; margin: 0 auto; }
-  .role-card { background: #16213e; border-radius: 12px; padding: 20px; margin: 15px; cursor: pointer; display: inline-block; text-align: center; transition: 0.2s; }
-  .role-card:hover { background: #0f3460; }
-  .role-card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e94560; }
-  .tabs { display: flex; gap: 10px; margin: 20px 0; }
-  .tab { padding: 10px 20px; background: #16213e; border-radius: 8px; cursor: pointer; }
-  .tab.active { background: #e94560; }
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #16213e; border-radius: 8px; overflow: hidden; }
-  th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #2a2a4a; }
-  th { background: #0f3460; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin: 2px; }
-  .weak { background: #c0392b; }
-  .resist { background: #2980b9; }
-  .immune { background: #7d3c98; }
-  .absorb { background: #27ae60; }
-  .normal { background: #555; }
-  .equip-slot { background: #2d2d4a; padding: 10px; border-radius: 8px; margin: 5px 0; display: flex; align-items: center; gap: 10px; }
-  .equip-slot img { width: 40px; height: 40px; border-radius: 5px; }
-  button { background: #e94560; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-  .back-btn { margin-bottom: 15px; display: inline-block; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>角色状态面板</title>
+  <script src="https://cdn.staticfile.org/vue/3.4.21/vue.global.prod.min.js"></script>
+  <style>
+    /* 牛皮纸肌理背景 */
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #c8a96e;
+      background-image: 
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 90, 43, 0.05) 2px, rgba(139, 90, 43, 0.05) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 90, 43, 0.03) 2px, rgba(139, 90, 43, 0.03) 4px);
+      font-family: "Microsoft YaHei", "苹方", "PingFang SC", "Helvetica Neue", sans-serif;
+      color: #3e2e1f;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1050px;
+      margin: 0 auto;
+      background: rgba(30, 25, 20, 0.85);
+      backdrop-filter: blur(6px);
+      border-radius: 16px;
+      padding: 30px 25px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px #b8860b;
+      border: 1px solid #b8860b;
+      color: #f0e6d2;
+    }
+
+    /* 暗金风格通用元素 */
+    h1, h2, h3, h4 {
+      color: #d4af37;
+      text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+      border-bottom: 1px solid #8b6508;
+      padding-bottom: 5px;
+      margin: 0 0 15px 0;
+    }
+
+    button, .back-btn, .tab, .role-card {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .role-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .role-card {
+      background: rgba(20, 15, 10, 0.8);
+      border: 1px solid #b8860b;
+      border-radius: 12px;
+      padding: 20px 15px;
+      text-align: center;
+      width: 150px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .role-card:hover {
+      transform: translateY(-5px);
+      border-color: #d4af37;
+      box-shadow: 0 8px 20px rgba(180, 130, 20, 0.3);
+    }
+    .role-card img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #d4af37;
+      margin-bottom: 10px;
+    }
+    .role-card h3 {
+      margin: 8px 0 4px;
+      font-size: 1.1em;
+      border: none;
+      color: #f0e6d2;
+      text-shadow: none;
+    }
+    .role-card p {
+      margin: 0;
+      color: #c4a87c;
+    }
+
+    .back-btn {
+      display: inline-block;
+      background: #3e2e1f;
+      border: 1px solid #b8860b;
+      color: #d4af37;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      margin-bottom: 20px;
+    }
+    .back-btn:hover {
+      background: #5c4427;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+      border-bottom: 1px solid #8b6508;
+      padding-bottom: 10px;
+    }
+    .tab {
+      padding: 8px 22px;
+      background: transparent;
+      border: 1px solid #8b6508;
+      border-radius: 20px;
+      color: #c4a87c;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .tab.active {
+      background: #b8860b;
+      color: #1a140e;
+      border-color: #d4af37;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      background: rgba(10, 8, 5, 0.7);
+      border: 1px solid #8b6508;
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.95em;
+    }
+    th {
+      background: #3e2e1f;
+      color: #d4af37;
+      font-weight: normal;
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #8b6508;
+    }
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #4a3a2a;
+      color: #f0e6d2;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      margin: 2px;
+      font-weight: bold;
+    }
+    .weak { background: #c0392b; color: white; }
+    .resist { background: #2c6e91; color: white; }
+    .immune { background: #6b3773; color: white; }
+    .absorb { background: #2d7a4a; color: white; }
+    .normal { background: #4a4a4a; color: #ddd; }
+
+    .equip-slot {
+      background: rgba(20, 15, 10, 0.8);
+      border: 1px solid #b8860b;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .equip-slot img {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      border: 1px solid #8b6508;
+    }
+
+    /* 技能/物品展开卡片 */
+    .expandable-item {
+      background: rgba(15, 10, 5, 0.8);
+      border: 1px solid #8b6508;
+      border-radius: 8px;
+      margin: 6px 0;
+      padding: 0;
+      transition: all 0.15s;
+    }
+    .expandable-item .item-header {
+      padding: 12px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: #f0e6d2;
+    }
+    .expandable-item .item-header:hover {
+      background: rgba(180, 130, 20, 0.15);
+    }
+    .expandable-item .item-header .title {
+      font-weight: bold;
+      color: #e6cc80;
+    }
+    .expandable-item .item-header .arrow {
+      color: #b8860b;
+      font-size: 1.2em;
+    }
+    .expandable-item .item-detail {
+      padding: 10px 15px 15px 15px;
+      border-top: 1px dashed #8b6508;
+      color: #d6c49f;
+      line-height: 1.6;
+    }
+    .item-intro {
+      font-style: italic;
+      color: #c0a87a;
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+
+    .no-data {
+      color: #7a6a55;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .img-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    hr {
+      border-color: #8b6508;
+      margin: 15px 0;
+    }
+  </style>
 </head>
 <body>
 <div id="app">
   <div class="container">
     <!-- 角色选择页 -->
     <div v-if="!selectedRole">
-      <h1>选择角色</h1>
-      <div>
+      <h1 style="text-align:center;">⚔️ 角色选择 ⚔️</h1>
+      <div class="role-grid">
         <div v-for="role in roles" :key="role['角色ID']" class="role-card" @click="selectRole(role)">
           <img :src="role['头像(图片)'] || 'https://via.placeholder.com/80'" alt="头像">
           <h3>{{ role['角色名称'] }}</h3>
@@ -47,8 +256,10 @@
     <!-- 角色详情 -->
     <div v-else>
       <button @click="selectedRole=null" class="back-btn">← 返回角色选择</button>
-      <h1>{{ selectedRole['角色名称'] }} <small>Lv.{{ selectedRole['等级'] }}</small></h1>
-      <img :src="selectedRole['头像(图片)']" width="80" style="border-radius:50%">
+      <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+        <img :src="selectedRole['头像(图片)']" width="64" style="border-radius:50%; border:2px solid #d4af37;">
+        <h2 style="border:none; margin:0;">{{ selectedRole['角色名称'] }} <small style="font-size:0.6em; color:#c4a87c;">Lv.{{ selectedRole['等级'] }}</small></h2>
+      </div>
 
       <div class="tabs">
         <div :class="['tab', activeTab==='attr'?'active':'']" @click="activeTab='attr'">属性</div>
@@ -69,77 +280,86 @@
         <div>
           <span v-for="attr in ['火','雷','冰','风','地','毒','光','暗']" :key="attr"
                 :class="['badge', resistanceClass(selectedRole['抗性-'+attr])]">
-            {{ attr }}: {{ selectedRole['抗性-'+attr] || '普通' }}
+            {{ attr }}:{{ selectedRole['抗性-'+attr] || '普通' }}
           </span>
         </div>
       </div>
 
-      <!-- 技能面板 -->
+      <!-- 技能面板（可展开） -->
       <div v-if="activeTab==='skill'">
-        <table>
-          <tr><th>技能ID</th><th>名称</th><th>来源</th><th>类型</th><th>消耗</th><th>效果</th></tr>
-          <tr v-for="sk in roleSkills" :key="sk['技能ID']">
-            <td>{{ sk['技能ID'] }}</td>
-            <td>{{ sk['技能名称'] }}</td>
-            <td>{{ sk['来源'] }}</td>
-            <td>{{ sk['类型'] }}</td>
-            <td>{{ sk['消耗'] }}</td>
-            <td>{{ sk['效果'] }}</td>
-          </tr>
-        </table>
+        <div v-if="roleSkills.length===0" class="no-data">暂无技能</div>
+        <div v-for="sk in roleSkills" :key="sk['技能ID']" class="expandable-item">
+          <div class="item-header" @click="toggleSkill(sk['技能ID'])">
+            <span class="title">{{ sk['技能名称'] }}</span>
+            <span class="arrow">{{ expandedSkills[sk['技能ID']] ? '▾' : '▸' }}</span>
+          </div>
+          <div v-if="expandedSkills[sk['技能ID']]" class="item-detail">
+            <div class="item-intro">{{ sk['简介'] || '暂无简介' }}</div>
+            <div><strong>ID：</strong>{{ sk['技能ID'] }}　<strong>来源：</strong>{{ sk['来源'] }}　<strong>类型：</strong>{{ sk['类型'] }}　<strong>消耗：</strong>{{ sk['消耗'] }}</div>
+            <div style="margin-top:6px;"><strong>效果：</strong>{{ sk['效果'] }}</div>
+          </div>
+        </div>
       </div>
 
       <!-- 伙伴面板 -->
       <div v-if="activeTab==='partner'">
-        <div v-for="partner in rolePartners" :key="partner['伙伴ID']" style="background:#16213e;padding:15px;margin:10px 0;border-radius:8px">
-          <h3>{{ partner['伙伴名称'] }} <small>Lv.{{ partner['等级'] }}</small></h3>
+        <div v-if="rolePartners.length===0" class="no-data">暂无伙伴</div>
+        <div v-for="partner in rolePartners" :key="partner['伙伴ID']" style="background:rgba(15,10,5,0.8); border:1px solid #8b6508; border-radius:8px; padding:15px; margin:10px 0;">
+          <h3 style="border:none; margin-top:0;">{{ partner['伙伴名称'] }} <small style="font-size:0.7em; color:#aa9;">Lv.{{ partner['等级'] }}</small></h3>
           <p>HP: {{ partner['HP'] }} | MP: {{ partner['MP'] }} | 物防: {{ partner['物防'] }} | 魔防: {{ partner['魔防'] }}</p>
           <div>抗性: 
             <span v-for="attr in ['火','雷','冰','风','地','毒','光','暗']" :key="attr"
                   :class="['badge', resistanceClass(partner['抗性-'+attr])]">
-              {{ attr }}: {{ partner['抗性-'+attr] || '普通' }}
+              {{ attr }}:{{ partner['抗性-'+attr] || '普通' }}
             </span>
           </div>
           <h4>伙伴技能</h4>
-          <table>
-            <tr><th>技能ID</th><th>名称</th><th>消耗</th><th>效果</th></tr>
-            <tr v-for="ps in getPartnerSkills(partner['伙伴ID'])" :key="ps['技能ID']">
-              <td>{{ ps['技能ID'] }}</td>
-              <td>{{ ps['技能名称'] }}</td>
-              <td>{{ ps['消耗'] }}</td>
-              <td>{{ ps['效果'] }}</td>
-            </tr>
-          </table>
+          <div v-if="getPartnerSkills(partner['伙伴ID']).length===0" class="no-data">该伙伴没有技能</div>
+          <div v-for="ps in getPartnerSkills(partner['伙伴ID'])" :key="ps['技能ID']" class="expandable-item" style="margin:4px 0;">
+            <div class="item-header" @click="toggleSkill(ps['技能ID'])">
+              <span class="title">{{ ps['技能名称'] }}</span>
+              <span class="arrow">{{ expandedSkills[ps['技能ID']] ? '▾' : '▸' }}</span>
+            </div>
+            <div v-if="expandedSkills[ps['技能ID']]" class="item-detail">
+              <div class="item-intro">{{ ps['简介'] || '暂无简介' }}</div>
+              <div><strong>消耗：</strong>{{ ps['消耗'] }}</div>
+              <div><strong>效果：</strong>{{ ps['效果'] }}</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 背包面板 + 装备展示 -->
+      <!-- 背包面板 -->
       <div v-if="activeTab==='bag'">
         <h3>当前装备</h3>
         <div>
           <div class="equip-slot" v-for="slot in ['武器','防具','饰品1','饰品2']" :key="slot">
             <strong>{{ slot }}:</strong>
             <template v-if="equipments[slot]">
-              <img :src="equipments[slot]['图标(图片)']" width="30"> {{ equipments[slot]['物品名称'] }}
+              <img :src="equipments[slot]['图标(图片)']" class="img-icon"> {{ equipments[slot]['物品名称'] }}
             </template>
-            <span v-else>无</span>
+            <span v-else style="color:#7a6a55;">无</span>
           </div>
         </div>
         <h3>背包物品</h3>
-        <table>
-          <tr><th>图标</th><th>ID</th><th>名称</th><th>类型</th><th>标签</th><th>数量</th><th>描述</th><th>效果</th><th>状态</th></tr>
-          <tr v-for="item in allItems" :key="item['物品ID']">
-            <td><img :src="item['图标(图片)']" width="30" height="30"></td>
-            <td>{{ item['物品ID'] }}</td>
-            <td>{{ item['物品名称'] }}</td>
-            <td>{{ item['物品类型'] }}</td>
-            <td>{{ item['标签'] }}</td>
-            <td>{{ item['数量'] }}</td>
-            <td>{{ item['描述'] }}</td>
-            <td>{{ item['效果'] }}</td>
-            <td><span v-if="isEquipped(item['物品ID'])">已装备</span></td>
-          </tr>
-        </table>
+        <div v-if="allItems.length===0" class="no-data">背包为空</div>
+        <div v-for="item in allItems" :key="item['物品ID']" class="expandable-item">
+          <div class="item-header" @click="toggleItem(item['物品ID'])">
+            <span style="display:flex; align-items:center; gap:8px;">
+              <img :src="item['图标(图片)']" class="img-icon" v-if="item['图标(图片)']">
+              <span class="title">{{ item['物品名称'] }}</span>
+              <span style="font-size:0.85em; color:#c4a87c;">x{{ item['数量'] }}</span>
+              <span v-if="isEquipped(item['物品ID'])" style="color:#d4af37; font-weight:bold;">[已装备]</span>
+            </span>
+            <span class="arrow">{{ expandedItems[item['物品ID']] ? '▾' : '▸' }}</span>
+          </div>
+          <div v-if="expandedItems[item['物品ID']]" class="item-detail">
+            <div class="item-intro">{{ item['简介'] || '暂无简介' }}</div>
+            <div><strong>类型：</strong>{{ item['物品类型'] }}　<strong>标签：</strong>{{ item['标签'] }}</div>
+            <div style="margin-top:6px;"><strong>描述：</strong>{{ item['描述'] }}</div>
+            <div><strong>效果：</strong>{{ item['效果'] }}</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -152,16 +372,14 @@ createApp({
     return {
       rawData: null,
       selectedRole: null,
-      activeTab: 'attr'
+      activeTab: 'attr',
+      expandedSkills: {},
+      expandedItems: {}
     }
   },
   computed: {
-    roles() {
-      return this.rawData?.['角色'] || [];
-    },
-    allItems() {
-      return this.rawData?.['物品'] || [];
-    },
+    roles() { return this.rawData?.['角色'] || []; },
+    allItems() { return this.rawData?.['物品'] || []; },
     roleSkills() {
       if (!this.selectedRole || !this.rawData) return [];
       const roleId = this.selectedRole['角色ID'];
@@ -191,17 +409,11 @@ createApp({
   methods: {
     async fetchData() {
       try {
-        // 添加时间戳防止缓存
         const res = await fetch(`data.json?t=${Date.now()}`);
         this.rawData = await res.json();
-      } catch (e) {
-        console.error('获取数据失败，请检查 data.json');
-      }
+      } catch (e) { console.error('获取数据失败'); }
     },
-    selectRole(role) {
-      this.selectedRole = role;
-      this.activeTab = 'attr';
-    },
+    selectRole(role) { this.selectedRole = role; this.activeTab = 'attr'; },
     resistanceClass(val) {
       if (!val) return 'normal';
       if (val.includes('弱点')) return 'weak';
@@ -216,13 +428,17 @@ createApp({
       const skillIds = links.map(l => l['技能ID']);
       return this.rawData['技能']?.filter(s => skillIds.includes(s['技能ID'])) || [];
     },
+    toggleSkill(sid) {
+      this.expandedSkills = { ...this.expandedSkills, [sid]: !this.expandedSkills[sid] };
+    },
+    toggleItem(iid) {
+      this.expandedItems = { ...this.expandedItems, [iid]: !this.expandedItems[iid] };
+    },
     isEquipped(itemId) {
       return Object.values(this.equipments).some(i => i['物品ID'] === itemId);
     }
   },
-  mounted() {
-    this.fetchData();
-  }
+  mounted() { this.fetchData(); }
 }).mount('#app');
 </script>
 </body>
