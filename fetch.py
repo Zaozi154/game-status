@@ -5,7 +5,7 @@ from openpyxl import load_workbook
 wb = load_workbook('data.xlsx', data_only=True)
 
 # Sheet 顺序与之前一致（从左到右）
-all_sheets = ['角色','技能','角色技能','伙伴','伙伴技能','角色伙伴','物品','装备配置']
+all_sheets = ['角色','技能','角色技能','伙伴','伙伴技能','角色伙伴','物品','装备配置','角色背包']
 
 sheets = {}
 for name in all_sheets:
