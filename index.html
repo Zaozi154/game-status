@@ -57,7 +57,7 @@
     th { background: #3e2e1f; color: #d4af37; font-weight: normal; padding: 12px 15px; text-align: left; border-bottom: 1px solid #8b6508; }
     td { padding: 12px 15px; border-bottom: 1px solid #4a3a2a; color: #f0e6d2; }
 
-    /* 新型细血条 */
+    /* 血条蓝条 */
     .status-bars { margin-bottom: 20px; }
     .bar-row { display: flex; align-items: center; margin-bottom: 12px; }
     .bar-label { width: 40px; font-weight: bold; color: #f0e6d2; margin-right: 10px; }
@@ -65,18 +65,29 @@
       flex: 1; height: 14px; background: #2a1f14; border-radius: 7px;
       overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
     }
-    .hp-fill {
-      height: 100%; background: linear-gradient(90deg, #c0392b, #e74c3c);
-      border-radius: 7px; transition: width 0.3s ease;
-    }
-    .mp-fill {
-      height: 100%; background: linear-gradient(90deg, #2980b9, #3498db);
-      border-radius: 7px;
-    }
+    .hp-fill { height: 100%; background: linear-gradient(90deg, #c0392b, #e74c3c); border-radius: 7px; }
+    .mp-fill { height: 100%; background: linear-gradient(90deg, #2980b9, #3498db); border-radius: 7px; }
     .bar-inner-text {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       color: white; font-size: 11px; font-weight: bold;
       text-shadow: 0 0 2px black; cursor: pointer; white-space: nowrap;
+    }
+
+    /* 四个核心属性框 */
+    .core-stats {
+      display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .stat-box {
+      flex: 1; min-width: 80px; background: rgba(20,15,10,0.8);
+      border: 1px solid #b8860b; border-radius: 10px;
+      padding: 12px 8px; text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .stat-box .stat-title {
+      font-size: 0.8em; color: #d4af37; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
+    }
+    .stat-box .stat-value {
+      font-size: 1.4em; font-weight: bold; color: #f0e6d2;
     }
 
     .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; margin: 2px; font-weight: bold; }
@@ -97,6 +108,11 @@
     .expandable-item .item-header .arrow { color: #b8860b; font-size: 1.2em; }
     .expandable-item .item-detail { padding: 10px 15px 15px 15px; border-top: 1px dashed #8b6508; color: #d6c49f; line-height: 1.6; }
     .item-intro { font-style: italic; color: #c0a87a; font-size: 0.9em; margin-bottom: 8px; }
+    .item-stats { display: flex; gap: 20px; margin-bottom: 8px; flex-wrap: wrap; }
+    .item-stat { display: flex; gap: 5px; }
+    .item-stat .stat-label { color: #c4a87c; }
+    .item-stat .stat-value { color: #f0e6d2; font-weight: bold; }
+
     .no-data { color: #7a6a55; padding: 20px; text-align: center; }
     .img-icon { width: 28px; height: 28px; border-radius: 4px; vertical-align: middle; margin-right: 6px; }
     .money-display {
@@ -105,19 +121,14 @@
       font-size: 1.2em; font-weight: bold; color: #d4af37; text-shadow: 0 0 8px rgba(212,175,55,0.5);
     }
 
-    /* 品质颜色 */
-    .quality-普通 { color: #9e9e9e; }
-    .quality-优良 { color: #4caf50; }
-    .quality-稀有 { color: #2196f3; }
-    .quality-史诗 { color: #9c27b0; }
-    .quality-传说 { color: #ffc107; }
-    .quality-神话 { color: #f44336; }
+    .quality-普通 { color: #9e9e9e; } .quality-优良 { color: #4caf50; }
+    .quality-稀有 { color: #2196f3; } .quality-史诗 { color: #9c27b0; }
+    .quality-传说 { color: #ffc107; } .quality-神话 { color: #f44336; }
   </style>
 </head>
 <body>
 <div id="app">
   <div class="container">
-    <!-- 角色选择页 -->
     <div v-if="!selectedRole">
       <h1 style="text-align:center;">⚔️ 角色选择 ⚔️</h1>
       <div class="role-grid">
@@ -129,7 +140,6 @@
       </div>
     </div>
 
-    <!-- 角色详情 -->
     <div v-else>
       <button @click="selectedRole=null" class="back-btn">← 返回角色选择</button>
       <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
@@ -146,7 +156,6 @@
 
       <!-- 属性面板 -->
       <div v-if="activeTab==='attr'">
-        <!-- 血条蓝条独立显示 -->
         <div class="status-bars">
           <div class="bar-row">
             <span class="bar-label">HP</span>
@@ -164,6 +173,13 @@
           </div>
         </div>
 
+        <div class="core-stats">
+          <div class="stat-box"><div class="stat-title">MIG</div><div class="stat-value">{{ selectedRole['MIG'] || '?' }}</div></div>
+          <div class="stat-box"><div class="stat-title">DEX</div><div class="stat-value">{{ selectedRole['DEX'] || '?' }}</div></div>
+          <div class="stat-box"><div class="stat-title">INS</div><div class="stat-value">{{ selectedRole['INS'] || '?' }}</div></div>
+          <div class="stat-box"><div class="stat-title">WLP</div><div class="stat-value">{{ selectedRole['WLP'] || '?' }}</div></div>
+        </div>
+
         <table>
           <tr><th>物防</th><td>{{ selectedRole['物防'] }}</td><th>魔防</th><td>{{ selectedRole['魔防'] }}</td></tr>
           <tr><th>IP</th><td>{{ selectedRole['IP'] || '?' }}</td><th>物语点</th><td>{{ selectedRole['物语点'] || '?' }}</td></tr>
@@ -172,7 +188,7 @@
         </table>
         <h3>属性抗性</h3>
         <div>
-          <span v-for="attr in ['火','雷','冰','风','地','毒','光','暗']" :key="attr"
+          <span v-for="attr in ['物理','火','雷','冰','风','地','毒','光','暗']" :key="attr"
                 :class="['badge', resistanceClass(selectedRole['抗性-'+attr])]">
             {{ attr }}:{{ selectedRole['抗性-'+attr] || '普通' }}
           </span>
@@ -202,7 +218,7 @@
           <h3 style="border:none; margin-top:0;">{{ partner['伙伴名称'] }} <small style="font-size:0.7em; color:#aa9;">Lv.{{ partner['等级'] }}</small></h3>
           <p>HP: {{ partner['HP'] }} | MP: {{ partner['MP'] }} | 物防: {{ partner['物防'] }} | 魔防: {{ partner['魔防'] }}</p>
           <div>抗性: 
-            <span v-for="attr in ['火','雷','冰','风','地','毒','光','暗']" :key="attr"
+            <span v-for="attr in ['物理','火','雷','冰','风','地','毒','光','暗']" :key="attr"
                   :class="['badge', resistanceClass(partner['抗性-'+attr])]">
               {{ attr }}:{{ partner['抗性-'+attr] || '普通' }}
             </span>
@@ -251,6 +267,15 @@
           </div>
           <div v-if="expandedItems[pi['物品ID']]" class="item-detail">
             <div class="item-intro">{{ pi['简介'] || '暂无简介' }}</div>
+            <!-- 武器/防具专属属性 -->
+            <div class="item-stats" v-if="pi['物品类型'] === '武器'">
+              <div class="item-stat"><span class="stat-label">命中检定：</span><span class="stat-value">{{ pi['命中检定'] || '?' }}</span></div>
+              <div class="item-stat"><span class="stat-label">攻击伤害：</span><span class="stat-value">{{ pi['攻击伤害'] || '?' }}</span></div>
+            </div>
+            <div class="item-stats" v-else-if="pi['物品类型'] === '防具'">
+              <div class="item-stat"><span class="stat-label">物防加值：</span><span class="stat-value">{{ pi['物防加值'] || '?' }}</span></div>
+              <div class="item-stat"><span class="stat-label">魔防加值：</span><span class="stat-value">{{ pi['魔防加值'] || '?' }}</span></div>
+            </div>
             <div><strong>类型：</strong>{{ pi['物品类型'] }}　<strong>标签：</strong>{{ pi['标签'] }}</div>
             <div style="margin-top:6px;"><strong>描述：</strong>{{ pi['描述'] }}</div>
             <div><strong>效果：</strong>{{ pi['效果'] }}</div>
@@ -271,7 +296,7 @@ createApp({
       activeTab: 'attr',
       expandedSkills: {},
       expandedItems: {},
-      currentValues: {}  // { roleId: { hp, mp } }
+      currentValues: {}
     };
   },
   computed: {
@@ -293,9 +318,7 @@ createApp({
       const inv = this.personalInventories[roleId] || {};
       return Object.keys(inv).map(itemId => {
         const template = this.allItemTemplates.find(i => i['物品ID'] === itemId);
-        if (template) {
-          return { ...template, 当前数量: inv[itemId] };
-        }
+        if (template) return { ...template, 当前数量: inv[itemId] };
         return null;
       }).filter(Boolean);
     },
@@ -408,12 +431,8 @@ createApp({
       const skillIds = links.map(l => l['技能ID']);
       return this.rawData['技能']?.filter(s => skillIds.includes(s['技能ID'])) || [];
     },
-    toggleSkill(sid) {
-      this.expandedSkills = { ...this.expandedSkills, [sid]: !this.expandedSkills[sid] };
-    },
-    toggleItem(iid) {
-      this.expandedItems = { ...this.expandedItems, [iid]: !this.expandedItems[iid] };
-    },
+    toggleSkill(sid) { this.expandedSkills = { ...this.expandedSkills, [sid]: !this.expandedSkills[sid] }; },
+    toggleItem(iid) { this.expandedItems = { ...this.expandedItems, [iid]: !this.expandedItems[iid] }; },
     isEquipped(itemId) {
       return Object.values(this.equipments).some(i => i['物品ID'] === itemId);
     }
