@@ -76,14 +76,13 @@
       padding: 12px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
       font-size: 1.2em; font-weight: bold; color: #d4af37; text-shadow: 0 0 8px rgba(212,175,55,0.5);
     }
-    .attr-extra { display: flex; gap: 30px; margin-bottom: 10px; }
-    .attr-extra span { color: #f0e6d2; }
     hr { border-color: #8b6508; margin: 15px 0; }
   </style>
 </head>
 <body>
 <div id="app">
   <div class="container">
+    <!-- 角色选择页 -->
     <div v-if="!selectedRole">
       <h1 style="text-align:center;">⚔️ 角色选择 ⚔️</h1>
       <div class="role-grid">
@@ -95,6 +94,7 @@
       </div>
     </div>
 
+    <!-- 角色详情 -->
     <div v-else>
       <button @click="selectedRole=null" class="back-btn">← 返回角色选择</button>
       <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
@@ -171,12 +171,9 @@
         </div>
       </div>
 
-      <!-- 背包面板（独立金钱 + 角色私有物品） -->
+      <!-- 背包面板 -->
       <div v-if="activeTab==='bag'">
-        <!-- 金钱显示 -->
-        <div class="money-display">
-          💰 金钱：{{ selectedRole['金钱'] || 0 }} G
-        </div>
+        <div class="money-display">💰 金钱：{{ selectedRole['金钱'] || 0 }} G</div>
 
         <h3>当前装备</h3>
         <div>
@@ -226,10 +223,12 @@ createApp({
     }
   },
   computed: {
-    roles() { return this.rawData?.['角色'] || []; },
-    // 全物品模板列表（用于获取详细信息）
-    allItemTemplates() { return this.rawData?.['物品'] || []; },
-    // 角色私有物品映射表（角色ID -> {物品ID: 数量}）
+    roles() {
+      return this.rawData?.['角色'] || [];
+    },
+    allItemTemplates() {
+      return this.rawData?.['物品'] || [];
+    },
     personalInventories() {
       if (!this.rawData?.['角色背包']) return {};
       const map = {};
@@ -240,7 +239,6 @@ createApp({
       });
       return map;
     },
-    // 当前角色私有物品列表（带物品详情）
     personalItems() {
       if (!this.selectedRole) return [];
       const roleId = this.selectedRole['角色ID'];
@@ -253,15 +251,26 @@ createApp({
         return null;
       }).filter(Boolean);
     },
-    roleSkills() { /* 保留原有逻辑 */ },
-    rolePartners() { /* 保留原有逻辑 */ },
+    roleSkills() {
+      if (!this.selectedRole || !this.rawData) return [];
+      const roleId = this.selectedRole['角色ID'];
+      const links = this.rawData['角色技能']?.filter(r => r['角色ID'] === roleId) || [];
+      const skillIds = links.map(l => l['技能ID']);
+      return this.rawData['技能']?.filter(s => skillIds.includes(s['技能ID'])) || [];
+    },
+    rolePartners() {
+      if (!this.selectedRole || !this.rawData) return [];
+      const roleId = this.selectedRole['角色ID'];
+      const links = this.rawData['角色伙伴']?.filter(r => r['角色ID'] === roleId) || [];
+      const partnerIds = links.map(l => l['伙伴ID']);
+      return this.rawData['伙伴']?.filter(p => partnerIds.includes(p['伙伴ID'])) || [];
+    },
     equipments() {
       if (!this.selectedRole || !this.rawData) return {};
       const roleId = this.selectedRole['角色ID'];
       const configs = this.rawData['装备配置']?.filter(e => e['角色ID'] === roleId) || [];
       const eq = {};
       configs.forEach(c => {
-        // 检查该物品是否属于当前角色背包
         const inv = this.personalInventories[roleId] || {};
         if (inv[c['物品ID']]) {
           const item = this.allItemTemplates.find(i => i['物品ID'] === c['物品ID']);
@@ -272,17 +281,47 @@ createApp({
     }
   },
   methods: {
-    async fetchData() { /* 相同 */ },
-    selectRole(role) { /* 相同 */ },
-    resistanceClass(val) { /* 相同 */ },
-    getPartnerSkills(partnerId) { /* 相同 */ },
-    toggleSkill(sid) { /* 相同 */ },
-    toggleItem(iid) { /* 相同 */ },
+    async fetchData() {
+      try {
+        const res = await fetch(`data.json?t=${Date.now()}`);
+        this.rawData = await res.json();
+      } catch (e) {
+        console.error('获取数据失败，请检查 data.json');
+      }
+    },
+    selectRole(role) {
+      this.selectedRole = role;
+      this.activeTab = 'attr';
+      this.expandedSkills = {};
+      this.expandedItems = {};
+    },
+    resistanceClass(val) {
+      if (!val) return 'normal';
+      if (val.includes('弱点')) return 'weak';
+      if (val.includes('抗性')) return 'resist';
+      if (val.includes('免疫')) return 'immune';
+      if (val.includes('吸收')) return 'absorb';
+      return 'normal';
+    },
+    getPartnerSkills(partnerId) {
+      if (!this.rawData) return [];
+      const links = this.rawData['伙伴技能']?.filter(p => p['伙伴ID'] === partnerId) || [];
+      const skillIds = links.map(l => l['技能ID']);
+      return this.rawData['技能']?.filter(s => skillIds.includes(s['技能ID'])) || [];
+    },
+    toggleSkill(sid) {
+      this.expandedSkills = { ...this.expandedSkills, [sid]: !this.expandedSkills[sid] };
+    },
+    toggleItem(iid) {
+      this.expandedItems = { ...this.expandedItems, [iid]: !this.expandedItems[iid] };
+    },
     isEquipped(itemId) {
       return Object.values(this.equipments).some(i => i['物品ID'] === itemId);
     }
   },
-  mounted() { this.fetchData(); }
+  mounted() {
+    this.fetchData();
+  }
 }).mount('#app');
 </script>
 </body>
